@@ -1,0 +1,101 @@
+# ===========================
+# Dependencies
+# ===========================
+node_modules/
+
+# ===========================
+# Environment & Secrets
+# ===========================
+.env
+.env.local
+.env.production
+.env.development
+.env*.local
+
+# ===========================
+# Build Output
+# ===========================
+dist/
+build/
+
+# ===========================
+# Logs
+# ===========================
+*.log
+npm-debug.log*
+
+# ===========================
+# OS Files
+# ===========================
+.DS_Store
+Thumbs.db
+
+# ===========================
+# IDE / Editor
+# ===========================
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ===========================
+# Scraped Data (large files)
+# ===========================
+codeforces-problems/
+backend/scripts/
+
+# ===========================
+# CSES Test Cases (4GB+ downloaded via script)
+# ===========================
+backend/cses-tests/
+
+# ===========================
+# Claude temp files
+# ===========================
+tmpclaude-*
+NUL
+
+# ===========================
+# Debug / Temp Artifacts
+# ===========================
+*.zip
+backend/*.html
+backend/*.png
+
+# ===========================
+# Postman (auto-generated)
+# ===========================
+.postman/
+
+# ===========================
+# Chrome Extension (packed)
+# ===========================
+chrome-extension/*.crx
+chrome-extension/*.pem
+
+# ===========================
+# Test Coverage
+# ===========================
+coverage/
+.nyc_output/
+
+# ===========================
+# Cache
+# ===========================
+.cache/
+.parcel-cache/
+.eslintcache
+
+# ===========================
+# Package Locks (optional - keep one)
+# ===========================
+# package-lock.json
+# yarn.lock
+
+# ===========================
+# Misc Dev Files
+# ===========================
+*.bak
+*.tmp
+*.temp
+.gemini/
