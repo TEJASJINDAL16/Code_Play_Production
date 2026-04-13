@@ -29,6 +29,8 @@ npm-debug.log*
 # ===========================
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # ===========================
 # IDE / Editor
@@ -37,6 +39,8 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+*.sublime-workspace
+*.sublime-project
 
 # ===========================
 # Scraped Data (large files)
@@ -50,14 +54,16 @@ backend/scripts/
 backend/cses-tests/
 
 # ===========================
-# Claude temp files
+# Build artifacts (should not be in repo)
 # ===========================
-tmpclaude-*
-NUL
+frontend/build_output.txt
+frontend/structure.txt
 
 # ===========================
 # Debug / Temp Artifacts
 # ===========================
+tmpclaude-*
+NUL
 *.zip
 backend/*.html
 backend/*.png
@@ -85,12 +91,6 @@ coverage/
 .cache/
 .parcel-cache/
 .eslintcache
-
-# ===========================
-# Package Locks (optional - keep one)
-# ===========================
-# package-lock.json
-# yarn.lock
 
 # ===========================
 # Misc Dev Files
