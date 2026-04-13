@@ -86,7 +86,7 @@ export const cacheMiddleware = (options = {}) => {
                         isStale = true;
                     }
                 }
-            } catch (redisErr) {
+            } catch (_redisErr) {
                 // Redis unavailable, try memory cache
                 const memEntry = getMemoryCache(cacheKey);
                 if (memEntry) {
@@ -125,7 +125,7 @@ export const cacheMiddleware = (options = {}) => {
                     // Store in both Redis and memory
                     try {
                         redis.setex(cacheKey, ttl, JSON.stringify(data)).catch(() => {});
-                    } catch (e) {
+                    } catch (_e) {
                         // Redis unavailable
                     }
                     setMemoryCache(cacheKey, data, ttl * 1000, staleWhileRevalidate);
@@ -147,6 +147,7 @@ export const cacheMiddleware = (options = {}) => {
 /**
  * Background refresh for stale-while-revalidate
  */
+// eslint-disable-next-line no-unused-vars
 const refreshCache = async (req, cacheKey, ttl, staleWhileRevalidate) => {
     // This would need the actual route handler to refresh
     // For now, just invalidate the cache to force fresh fetch on next request

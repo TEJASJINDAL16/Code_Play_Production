@@ -21,16 +21,9 @@ export default function authMiddleware(req, res, next) {
             return res.status(500).json({ error: "Server configuration error" });
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Corrected: decoded is the payload, usually { id: ... } 
-        // Note: auth.js signs { id: user._id, username: ... }
-        // but auth.js:68 returns user: { id: ... }
-        // Let's ensure req.user.id is accessible.
-        // Auth logic usually expects req.user = decoded or req.user = decoded.user
-        // In auth.js: jwt.sign({ id: user._id ... }) -> decoded has .id
-        // profile.js: await User.findById(req.user.id) -> checks req.user.id
-        // So req.user = decoded is correct.
+        req.user = decoded;
         next();
-    } catch (err) {
+    } catch (_err) {
         res.status(401).json({ error: "Token is not valid" });
     }
 }
