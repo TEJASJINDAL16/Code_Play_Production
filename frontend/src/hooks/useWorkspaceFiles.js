@@ -53,7 +53,7 @@ export function useWorkspaceFiles({ id, user, socket, accessStatus, isHost, host
                     try {
                         const pf = JSON.parse(savedPreview);
                         setActiveFile(pf);
-                    } catch (e) { }
+                    } catch (_e) { /* ignored — invalid JSON in localStorage */ }
                 } else if (lastId) {
                     const found = data.find(f => f._id === lastId);
                     if (found) {
@@ -76,6 +76,7 @@ export function useWorkspaceFiles({ id, user, socket, accessStatus, isHost, host
         if (accessStatus === "granted") {
             fetchFiles();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, accessStatus, hostUserId]);
 
     // Local Storage Backup
