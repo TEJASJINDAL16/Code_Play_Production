@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { X, ExternalLink, Clock, CheckCircle2, XCircle, AlertTriangle, Loader2, Code2 } from "lucide-react";
 import { API_URL } from "../config";
 import TestCaseGrid from "./TestCaseGrid";
@@ -28,7 +28,7 @@ const LANG_MAP = {
 
 let MonacoEditor = null;
 
-export default function CSESResultModal({ isOpen, onClose, submission, submissionId, problemId, user }) {
+export default function CSESResultModal({ isOpen, onClose, submission, submissionId, problemId }) {
     const [activeSubmission, setActiveSubmission] = useState(null);
     const [selectedTest, setSelectedTest] = useState(null);
     const [pastSubmissions, setPastSubmissions] = useState([]);
@@ -58,6 +58,7 @@ export default function CSESResultModal({ isOpen, onClose, submission, submissio
         } else if (submissionId) {
             fetchSubmission(submissionId);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, submission, submissionId]);
 
     // Fetch past submissions when we know the problemId
@@ -67,7 +68,8 @@ export default function CSESResultModal({ isOpen, onClose, submission, submissio
         if (pid) {
             fetchPastSubmissions(pid);
         }
-    }, [isOpen, activeSubmission?.problemId || problemId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, activeSubmission?.problemId, problemId]);
 
     // Keyboard handler
     useEffect(() => {
@@ -83,7 +85,7 @@ export default function CSESResultModal({ isOpen, onClose, submission, submissio
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
-    }, [isOpen, selectedTest, activeSubmission]);
+    }, [isOpen, selectedTest, activeSubmission, onClose]);
 
     function autoSelectTest(sub) {
         if (!sub?.judgeResult) {
@@ -139,6 +141,7 @@ export default function CSESResultModal({ isOpen, onClose, submission, submissio
         setSelectedTest(null);
         setActiveTab("results");
         fetchSubmission(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeSubmission?._id]);
 
     // Reset state when modal closes
@@ -159,6 +162,9 @@ export default function CSESResultModal({ isOpen, onClose, submission, submissio
     const jr = sub?.judgeResult;
     const verdictCfg = sub ? (VERDICT_CONFIG[sub.verdict] || VERDICT_CONFIG["Judge Error"]) : null;
     const VIcon = verdictCfg?.icon || AlertTriangle;
+
+    // Suppress unused var warning — editorLoaded drives re-render when Monaco loads
+    void editorLoaded;
 
     return (
         <div
