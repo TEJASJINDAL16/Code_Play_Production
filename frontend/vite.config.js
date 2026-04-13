@@ -11,6 +11,24 @@ export default defineConfig({
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
   },
+  server: {
+    port: parseInt(process.env.VITE_DEV_PORT || '5173'),
+    host: true, // Listen on all interfaces (needed for Docker)
+    proxy: {
+      // Proxy API requests to backend during development
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Proxy Socket.IO connections
+      '/socket.io': {
+        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
   build: {
     // Code splitting configuration
     rollupOptions: {
