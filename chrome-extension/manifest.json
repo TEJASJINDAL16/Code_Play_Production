@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "CodePlay Helper",
-    "version": "1.5",
+    "version": "1.6",
     "description": "Submit code to Codeforces and LeetCode directly from CodePlay Editor.",
     "permissions": [
         "cookies",
@@ -11,8 +11,9 @@
     "host_permissions": [
         "https://leetcode.com/*",
         "https://codeforces.com/*",
-        "https://cod-play.tech/*",
-        "https://www.cod-play.tech/*"
+        "http://localhost/*",
+        "http://localhost:5173/*",
+        "http://localhost:3000/*"
     ],
     "background": {
         "service_worker": "background.js"
@@ -20,8 +21,9 @@
     "content_scripts": [
         {
             "matches": [
-                "https://cod-play.tech/*",
-                "https://www.cod-play.tech/*",
+                "http://localhost/*",
+                "http://localhost:5173/*",
+                "http://localhost:3000/*",
                 "https://codeforces.com/*"
             ],
             "js": [
