@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import cpData from './cp31.json';
-import { ChevronDown, ChevronRight, CheckCircle, Circle, Play } from 'lucide-react';
+import { ChevronDown, CheckCircle } from 'lucide-react';
 import { API_URL } from '../config';
-import { parseCodeforcesProblem } from "../utils/codeforces";
 
 const CP31Browser = ({ onOpenProblem, user }) => {
     const [expandedRating, setExpandedRating] = useState(null);
@@ -88,7 +87,7 @@ const CP31Browser = ({ onOpenProblem, user }) => {
              
              // 2. Try Extension
              try {
-                const { parseCodeforcesProblem } = await import("../utils/codeforces"); // Dynamic import if needed or import at top
+                const { parseCodeforcesProblem } = await import("../utils/codeforces");
                 const html = await fetchViaExtension();
                 const parsed = parseCodeforcesProblem(html, problem.contestId, problem.index);
                 

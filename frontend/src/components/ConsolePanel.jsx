@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { X, Ban, Terminal } from "lucide-react";
 
 export default function ConsolePanel({ 

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 
 // Session key for chat history
 const CHAT_HISTORY_KEY = "gemini_chat_history";
 
 // Moved OUTSIDE component to prevent re-creation each render
+// eslint-disable-next-line no-unused-vars
 const CodeBlock = ({ node, inline, className, children, ...props }) => {
   const match = /language-(\w+)/.exec(className || "");
   const codeString = String(children).replace(/\n$/, "");

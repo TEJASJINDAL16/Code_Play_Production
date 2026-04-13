@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import Editor, { loader } from "@monaco-editor/react"; // Import loader
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
 import { Awareness } from "y-protocols/awareness";
 import { API_URL } from "../config"; 
-import { FileJson, FileType, FileCode, Coffee, Braces } from "lucide-react";
+import { FileCode } from "lucide-react";
 import ProblemPreview from "./ProblemPreview";
 
 // 1. ADVANCED EDITOR OPTIONS
@@ -84,9 +84,9 @@ export default function Editors({
         } catch (e) { console.warn("Yjs binding cleanup warning:", e); }
         bindingRef.current = null;
     }
-    if (awarenessRef.current) { try { awarenessRef.current.destroy(); } catch (e) { } awarenessRef.current = null; }
-    if (providerRef.current) { try { providerRef.current.disconnect(); providerRef.current.destroy(); } catch (e) { } providerRef.current = null; }
-    if (docRef.current) { try { docRef.current.destroy(); } catch (e) { } docRef.current = null; }
+    if (awarenessRef.current) { try { awarenessRef.current.destroy(); } catch (_e) { /* cleanup */ } awarenessRef.current = null; }
+    if (providerRef.current) { try { providerRef.current.disconnect(); providerRef.current.destroy(); } catch (_e) { /* cleanup */ } providerRef.current = null; }
+    if (docRef.current) { try { docRef.current.destroy(); } catch (_e) { /* cleanup */ } docRef.current = null; }
     setIsSynced(false);
     editorRef.current = null;
   }, []);
@@ -105,7 +105,7 @@ export default function Editors({
     }
   }, [username, isSynced]);
 
-  const handleMount = useCallback((editor, monaco) => {
+  const handleMount = useCallback((editor, _monaco) => {
     if (!activeFile) return;
     editorRef.current = editor;
 
