@@ -54,14 +54,6 @@ async function imageExists(imageName) {
 
 /**
  * Execute user code against a single test case in a Docker sandbox.
- *
- * @param {Object} options
- * @param {string} options.code - User source code
- * @param {string} options.language - Programming language
- * @param {string} options.input - Test case input
- * @param {number} options.timeLimit - Time limit in seconds (e.g. 1.0)
- * @param {number} options.memoryLimit - Memory limit in MB (e.g. 256)
- * @returns {Promise<{ verdict: string, stdout: string, stderr: string, time: number, exitCode: string }>}
  */
 export async function execute({ code, language, input, timeLimit = 2, memoryLimit = 256 }) {
     const lang = normalizeLang(language);
@@ -71,7 +63,6 @@ export async function execute({ code, language, input, timeLimit = 2, memoryLimi
         return { verdict: "CE", stdout: "", stderr: `Unsupported language: ${language}`, time: 0, exitCode: "CE" };
     }
 
-    // Create isolated temp directory
     const tmpId = crypto.randomBytes(8).toString("hex");
     const tmpDir = path.join(os.tmpdir(), `cses-judge-${tmpId}`);
     const outputDir = path.join(tmpDir, "output");
@@ -80,67 +71,57 @@ export async function execute({ code, language, input, timeLimit = 2, memoryLimi
         fs.mkdirSync(tmpDir, { recursive: true });
         fs.mkdirSync(outputDir, { recursive: true });
 
-        // Write source code
         const sourceFile = `solution.${config.ext}`;
         fs.writeFileSync(path.join(tmpDir, sourceFile), code);
-
-        // Write input
         fs.writeFileSync(path.join(tmpDir, "input.txt"), input);
 
-        // Check if Docker image exists
         const hasImage = await imageExists(config.image);
         if (!hasImage) {
-            // Fall back to direct execution without Docker
             return await executeWithoutDocker({ code, lang, config, input, timeLimit, tmpDir, outputDir });
         }
 
-        // Build docker run command
-        // Add extra time buffer for compilation (especially Java)
         const dockerTimeout = Math.ceil(timeLimit * 2 + 10);
         const args = [
             "run", "--rm",
-            "--network=none",                          // No internet
-            `--memory=${memoryLimit}m`,                 // Memory limit
-            "--memory-swap=" + memoryLimit + "m",       // No swap
-            "--cpus=1",                                 // 1 CPU
-            "--pids-limit=64",                          // Prevent fork bombs
-            "--read-only",                              // Read-only root filesystem
-            "--tmpfs", "/tmp:rw,size=64m,exec",         // Writable /tmp with exec
-            "-v", `${tmpDir}:/workspace:ro`,            // Mount source code (read-only)
-            "-v", `${outputDir}:/output:rw`,            // Mount output directory
-            config.image,                               // Image name
-            lang,                                       // Language arg
-            String(Math.ceil(timeLimit))                 // Time limit arg
+            "--network=none",
+            `--memory=${memoryLimit}m`,
+            "--memory-swap=" + memoryLimit + "m",
+            "--cpus=1",
+            "--pids-limit=64",
+            "--read-only",
+            "--tmpfs", "/tmp:rw,size=64m,exec",
+            "-v", `${tmpDir}:/workspace:ro`,
+            "-v", `${outputDir}:/output:rw`,
+            config.image,
+            lang,
+            String(Math.ceil(timeLimit))
         ];
 
         const startTime = Date.now();
 
         const result = await new Promise((resolve) => {
-            const proc = execFile("docker", args, {
+            execFile("docker", args, {
                 timeout: dockerTimeout * 1000,
-                maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-            }, (err, stdout, stderr) => {
+                maxBuffer: 10 * 1024 * 1024,
+            }, (err, _stdout, _stderr) => {
                 const elapsed = Date.now() - startTime;
 
                 if (err && err.killed) {
-                    // Process was killed (timeout at docker level)
                     resolve({ verdict: "TLE", stdout: "", stderr: "Docker execution timed out", time: elapsed, exitCode: "TLE" });
                     return;
                 }
 
-                // Read output files
                 let userStdout = "", userStderr = "", exitCode = "OK";
                 try {
                     userStdout = fs.readFileSync(path.join(outputDir, "stdout.txt"), "utf-8");
-                } catch { }
+                } catch (_e) { /* file may not exist */ }
                 try {
                     userStderr = fs.readFileSync(path.join(outputDir, "stderr.txt"), "utf-8");
-                } catch { }
+                } catch (_e) { /* file may not exist */ }
                 try {
                     exitCode = fs.readFileSync(path.join(outputDir, "exitcode.txt"), "utf-8").trim();
-                } catch { }
+                } catch (_e) { /* file may not exist */ }
 
-                // Map exit code to verdict
                 let verdict;
                 switch (exitCode) {
                     case "OK": verdict = "OK"; break;
@@ -157,10 +138,9 @@ export async function execute({ code, language, input, timeLimit = 2, memoryLimi
 
         return result;
     } finally {
-        // Cleanup temp directory
         try {
             fs.rmSync(tmpDir, { recursive: true, force: true });
-        } catch {
+        } catch (_e) {
             // Ignore cleanup errors
         }
     }
@@ -168,7 +148,6 @@ export async function execute({ code, language, input, timeLimit = 2, memoryLimi
 
 /**
  * Fallback execution without Docker (for development or when Docker isn't available).
- * Uses child_process with basic timeout. Less secure but functional.
  */
 async function executeWithoutDocker({ code, lang, config, input, timeLimit, tmpDir, outputDir }) {
     console.warn("[Judge] Docker image not found, falling back to direct execution");
@@ -178,22 +157,18 @@ async function executeWithoutDocker({ code, lang, config, input, timeLimit, tmpD
 
     try {
         if (lang === "cpp") {
-            // Compile
-            // Use c++14 by default (MinGW 8.x has broken <filesystem> in c++17 mode with bits/stdc++.h)
             const exeName = process.platform === "win32" ? "sol.exe" : "sol";
             const compileResult = await runProcess("g++", ["-O2", "-std=c++14", "-o", path.join(tmpDir, exeName), sourceFile], { timeout: 15000 });
             if (compileResult.exitCode !== 0) {
                 console.error(`[Judge] C++ compilation failed (exit ${compileResult.exitCode}):\n  cmd: g++ -O2 -std=c++14 -o ${path.join(tmpDir, exeName)} ${sourceFile}\n  stderr: ${compileResult.stderr}`);
                 return { verdict: "CE", stdout: "", stderr: compileResult.stderr, time: Date.now() - startTime, exitCode: "CE" };
             }
-            // Run
             const runResult = await runProcess(path.join(tmpDir, exeName), [], { timeout: timeLimit * 1000 + 1000, input });
             return formatResult(runResult, startTime);
         }
 
         if (lang === "python") {
             const runResult = await runProcess("python3", [sourceFile], { timeout: timeLimit * 1000 + 1000, input });
-            // Try python if python3 not found
             if (runResult.exitCode === 127) {
                 const runResult2 = await runProcess("python", [sourceFile], { timeout: timeLimit * 1000 + 1000, input });
                 return formatResult(runResult2, startTime);
@@ -277,17 +252,6 @@ function runProcess(cmd, args, options = {}) {
 
 /**
  * Execute user code against multiple test cases with a single compilation step.
- * Compiles once, runs for each input. Much faster than calling execute() in a loop.
- *
- * @param {Object} options
- * @param {string} options.code - User source code
- * @param {string} options.language - Programming language
- * @param {Array<{testNumber: number, input: string}>} options.inputs - Test case inputs
- * @param {number} options.timeLimit - Time limit in seconds per test
- * @param {number} options.memoryLimit - Memory limit in MB
- * @param {Function} [options.onTestComplete] - Callback(testNumber, result) called after each test
- * @param {Function} [options.shouldStop] - Callback() returning true to stop after current test
- * @returns {Promise<Array<{ verdict: string, stdout: string, stderr: string, time: number, exitCode: string, testNumber: number }>>}
  */
 export async function executeBatch({ code, language, inputs, timeLimit = 2, memoryLimit = 256, onTestComplete, shouldStop }) {
     const lang = normalizeLang(language);
@@ -314,12 +278,11 @@ export async function executeBatch({ code, language, inputs, timeLimit = 2, memo
             return await executeBatchWithoutDocker({ lang, config, sourceFile, inputs, timeLimit, tmpDir, onTestComplete, shouldStop });
         }
 
-        // Docker path: write source once, run docker per test (avoids re-writing files)
         return await executeBatchWithDocker({ lang, config, tmpDir, inputs, timeLimit, memoryLimit, onTestComplete, shouldStop });
     } finally {
         try {
             fs.rmSync(tmpDir, { recursive: true, force: true });
-        } catch {
+        } catch (_e) {
             // Ignore cleanup errors
         }
     }
@@ -333,7 +296,6 @@ async function executeBatchWithoutDocker({ lang, config, sourceFile, inputs, tim
     const results = [];
     let runCmd, runArgs;
 
-    // === COMPILE ONCE ===
     if (lang === "cpp") {
         const exeName = process.platform === "win32" ? "sol.exe" : "sol";
         const exePath = path.join(tmpDir, exeName);
@@ -364,7 +326,6 @@ async function executeBatchWithoutDocker({ lang, config, sourceFile, inputs, tim
         runCmd = "java";
         runArgs = ["-cp", tmpDir, "Main"];
     } else if (lang === "python") {
-        // Check if python3 is available first
         const checkResult = await runProcess("python3", ["--version"], { timeout: 3000 });
         if (checkResult.exitCode === "ENOENT") {
             runCmd = "python";
@@ -383,9 +344,8 @@ async function executeBatchWithoutDocker({ lang, config, sourceFile, inputs, tim
         });
     }
 
-    // === RUN EACH TEST ===
     for (const inp of inputs) {
-        if (shouldStop?.()) break; // Early termination on failure
+        if (shouldStop?.()) break;
         const startTime = Date.now();
         const runResult = await runProcess(runCmd, runArgs, {
             timeout: timeLimit * 1000 + 1000,
@@ -401,21 +361,17 @@ async function executeBatchWithoutDocker({ lang, config, sourceFile, inputs, tim
 
 /**
  * Batch execution with Docker — write source once, run docker per test.
- * (Each docker run is isolated, so we can't easily share a compiled binary across containers,
- * but we at least avoid re-creating temp dirs and re-writing source code.)
  */
 async function executeBatchWithDocker({ lang, config, tmpDir, inputs, timeLimit, memoryLimit, onTestComplete, shouldStop }) {
     const results = [];
 
     for (const inp of inputs) {
-        if (shouldStop?.()) break; // Early termination on failure
+        if (shouldStop?.()) break;
 
-        // Write this test's input
         fs.writeFileSync(path.join(tmpDir, "input.txt"), inp.input);
 
-        // Ensure clean output directory for each test
         const outputDir = path.join(tmpDir, "output");
-        try { fs.rmSync(outputDir, { recursive: true, force: true }); } catch {}
+        try { fs.rmSync(outputDir, { recursive: true, force: true }); } catch (_e) { /* ignore */ }
         fs.mkdirSync(outputDir, { recursive: true });
 
         const dockerTimeout = Math.ceil(timeLimit * 2 + 10);
@@ -450,9 +406,9 @@ async function executeBatchWithDocker({ lang, config, tmpDir, inputs, timeLimit,
                 }
 
                 let userStdout = "", userStderr = "", exitCode = "OK";
-                try { userStdout = fs.readFileSync(path.join(outputDir, "stdout.txt"), "utf-8"); } catch {}
-                try { userStderr = fs.readFileSync(path.join(outputDir, "stderr.txt"), "utf-8"); } catch {}
-                try { exitCode = fs.readFileSync(path.join(outputDir, "exitcode.txt"), "utf-8").trim(); } catch {}
+                try { userStdout = fs.readFileSync(path.join(outputDir, "stdout.txt"), "utf-8"); } catch (_e) { /* ignore */ }
+                try { userStderr = fs.readFileSync(path.join(outputDir, "stderr.txt"), "utf-8"); } catch (_e) { /* ignore */ }
+                try { exitCode = fs.readFileSync(path.join(outputDir, "exitcode.txt"), "utf-8").trim(); } catch (_e) { /* ignore */ }
 
                 let verdict;
                 switch (exitCode) {
@@ -477,11 +433,6 @@ async function executeBatchWithDocker({ lang, config, tmpDir, inputs, timeLimit,
 
 /**
  * Compare user output with expected output.
- * Trims trailing whitespace/newlines from each line and end.
- *
- * @param {string} userOutput
- * @param {string} expectedOutput
- * @returns {boolean}
  */
 export function compareOutput(userOutput, expectedOutput) {
     const normalize = (s) =>
