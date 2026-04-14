@@ -12,7 +12,7 @@
  * 5. Extension Delegation (client-side fallback)
  */
 
-import fetch from "node-fetch";
+
 import * as cheerio from "cheerio";
 import Problem from "../models/Problem.js";
 import redis from "../config/redis.js";

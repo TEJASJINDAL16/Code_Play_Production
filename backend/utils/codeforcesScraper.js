@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+
 
 // Helper to clean Codeforces HTML inputs (Paranoid Backend Version)
 const cleanCFText = (html) => {

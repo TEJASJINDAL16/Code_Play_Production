@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 // Use dynamic import for node-fetch if in ESM environment or stick to it if project is ESM
-import fetch from "node-fetch";
+
 
 // POST /api/leettools/solved
 // Body: { cookie, csrfToken, username? }

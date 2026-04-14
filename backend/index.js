@@ -53,7 +53,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // Security: Validate required environment variables
 const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(v => !process.env[v]);
-if (missingEnvVars.length > 0) {
+if (missingEnvVars.length > 0 && process.env.NODE_ENV !== 'test') {
   console.error(`❌ CRITICAL: Missing required environment variables: ${missingEnvVars.join(', ')}`);
   console.error('   Please set these in your .env file before running the server.');
   process.exit(1);
